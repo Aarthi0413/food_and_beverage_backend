@@ -82,7 +82,7 @@ const webhook = async (req, res) => {
       const saveOrder = await order.save();
 
       if(saveOrder?._id){
-        const deleteCartItem = await AddToCart.deleteMany({userId: session.metadata.userId})
+        await AddToCart.deleteMany({userId: session.metadata.userId})
       }
       break;
     case "payment_method.attached":
