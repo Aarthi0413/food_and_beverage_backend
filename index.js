@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors(
   {
-    origin: "https://food-and-beverage-frontend.vercel.app",
+    origin: "https://703917ee-e833-4e24-b6fd-3bd98be9e116.domoapps.prod5.domo.com",
     credentials: true,
     allowedHeaders:['Content-Type', 'Authorization']
   }
