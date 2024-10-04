@@ -32,7 +32,7 @@ const OrderSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    tableNumbers: {
+    guestCount: {
         type: Number,
         default: 1
     },

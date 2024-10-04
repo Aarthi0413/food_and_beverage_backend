@@ -3,7 +3,7 @@ const User = require("../models/userModel");
 
 const payment = async (req, res) => {
   try {
-    const { cartItems,tableNumbers, timeSlot, paymentOption, amount } = req.body;
+    const { cartItems,guestCount, timeSlot, paymentOption, amount } = req.body;
     console.log("Received amount for payment:", amount);
 
     const user = await User.findOne({_id:req.userId})
@@ -16,7 +16,7 @@ const payment = async (req, res) => {
       customer_email:user.email,
       metadata:{
         userId : req.userId,
-        tableNumbers: JSON.stringify(tableNumbers),
+        guestCount: JSON.stringify(guestCount),
         timeSlot: timeSlot || "",
         paymentOption: paymentOption,
       },

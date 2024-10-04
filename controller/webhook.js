@@ -72,7 +72,7 @@ const webhook = async (req, res) => {
         },
         totalAmount: totalAmount,
         remainingAmount: remainingAmount,
-        tableNumbers: session.metadata.tableNumbers,
+        guestCount: session.metadata.guestCount,
         timeSlot: session.metadata.timeSlot, 
         paymentOption: paymentOption,
       };
