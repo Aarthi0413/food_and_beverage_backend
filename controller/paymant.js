@@ -1,59 +1,56 @@
-const stripe = require("../config/stripe");
+const Order = require("../models/orderProductModel");
 const User = require("../models/userModel");
+const CartProduct = require("../models/cartProduct");
 
 const payment = async (req, res) => {
   try {
-    const { cartItems,guestCount, timeSlot, paymentOption, amount } = req.body;
-    console.log("Received amount for payment:", amount);
+    const { cartItems, guestCount, timeSlot, paymentOption } = req.body;
 
-    const user = await User.findOne({_id:req.userId})
+    const totalAmount = cartItems.reduce((total, item) => {
+      return total + item.productId.price * item.quantity;
+    }, 0);
 
-    const params = {
-      submit_type: "pay",
-      mode: "payment",
-      payment_method_types: ["card"],
-      billing_address_collection: "auto",
-      customer_email:user.email,
-      metadata:{
-        userId : req.userId,
-        guestCount: JSON.stringify(guestCount),
-        timeSlot: timeSlot || "",
-        paymentOption: paymentOption,
+    console.log("Calculated total amount for payment:", totalAmount);
+
+    const user = await User.findOne({ _id: req.userId });
+    if (!user) {
+      return res.status(404).json({ message: "User not found", error: true });
+    }
+
+    const paidAmount = paymentOption === "half" ? totalAmount / 2 : totalAmount;
+    const remainingAmount = totalAmount - paidAmount;
+
+    const newOrder = new Order({
+      productDetails: cartItems,
+      email: user.email,
+      userId: user._id,
+      totalAmount: totalAmount,
+      remainingAmount: remainingAmount,
+      guestCount: guestCount,
+      timeSlot: timeSlot || "",
+      paymentOption: paymentOption,
+      paymentDetails: {
+        paymentId: "manual",
+        payment_method_types: ["manual"],
+        payment_status: remainingAmount > 0 ? "partial" : "paid",
       },
-      line_items : cartItems.map((item,index)=>{
-        return{
-            price_data : {
-              currency : 'inr',
-              product_data : {
-                name : item.productId.productName,
-                images : item.productId.productImage,
-                metadata : {
-                    productId : item.productId._id
-                }
-              },
-              unit_amount : item.productId.price * (paymentOption === "half" ? 0.5 : 1) * 100,
-            },
-            adjustable_quantity : {
-                enabled : true,
-                minimum : 1
-            },
-            quantity : item.quantity
-        }
-      }),
-      success_url: `${process.env.FRONTEND_URL}/success`,
-      cancel_url: `${process.env.FRONTEND_URL}/cancel`,
-    };
+    });
 
-    const session = await stripe.checkout.sessions.create(params);
+    await newOrder.save();
 
-    res.json({
+    await CartProduct.deleteMany({ userId: user._id });
+
+    res.status(200).json({
       message: "Payment successful",
-      error: false,
       success: true,
-      data: session,
+      redirect_url: `${process.env.FRONTEND_URL}/success`,
     });
   } catch (error) {
-    res.json({ message: error?.message || error, error: true, success: false });
+    console.error("Payment processing error:", error);
+    res.status(500).json({
+      message: error.message || "Payment processing failed",
+      error: true,
+    });
   }
 };
 
